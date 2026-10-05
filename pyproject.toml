@@ -1,0 +1,19 @@
+[project]
+name = "jarvis_hud"
+version = "1.0.0"
+description = "Interface visual do assistente J.A.R.V.I.S."
+requires-python = ">=3.10"
+dependencies = [
+    "flet",
+    "requests",
+    "python-dotenv",
+]
+
+[tool.flet]
+org = "com.matheusbraganasc"
+product = "jarvis"
+company = "Matheus Braganasc"
+copyright = "Copyright (c) 2026 Matheus Braganasc"
+
+[tool.flet.app]
+path = "."

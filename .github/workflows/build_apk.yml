@@ -1,0 +1,35 @@
+name: Build JARVIS APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar o Flet
+        run: pip install flet
+
+      - name: Compilar o APK
+        run: flet build apk --verbose
+
+      - name: Enviar o APK gerado
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-apk
+          path: build/apk/
