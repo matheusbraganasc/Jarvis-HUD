@@ -2,10 +2,13 @@ import os
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+try:
+    load_dotenv(dotenv_path=".env")
+except Exception:
+    pass
 
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
-JARVIS_SECRET_KEY = os.getenv("JARVIS_SECRET_KEY", "")
+BACKEND_URL = os.getenv("BACKEND_URL", "__BACKEND_URL__")
+JARVIS_SECRET_KEY = os.getenv("JARVIS_SECRET_KEY", "__JARVIS_SECRET_KEY__")
 HEADERS = {"X-API-Key": JARVIS_SECRET_KEY, "Content-Type": "application/json"}
 
 

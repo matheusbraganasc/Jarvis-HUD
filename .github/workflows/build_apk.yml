@@ -25,6 +25,11 @@ jobs:
       - name: Instalar o Flet
         run: pip install flet
 
+      - name: Injetar segredos no código
+        run: |
+          sed -i "s|__BACKEND_URL__|${{ secrets.BACKEND_URL }}|g" Core/api_client.py
+          sed -i "s|__JARVIS_SECRET_KEY__|${{ secrets.JARVIS_SECRET_KEY }}|g" Core/api_client.py
+
       - name: Compilar o APK
         run: flet build apk --yes --verbose
 
