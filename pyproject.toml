@@ -16,4 +16,6 @@ company = "Matheus Braganasc"
 copyright = "Copyright (c) 2026 Matheus Braganasc"
 
 [tool.flet.app]
-path = "."
+
+[tool.flet.flutter.pubspec.dependency_overrides]
+jni_flutter = "1.0.3"
