@@ -7,22 +7,23 @@ from Core.api_client import (
     enviar_mensagem,
 )
 
-
-CYAN = ft.Colors.CYAN_ACCENT_400
-CYAN_LIGHT = ft.Colors.CYAN_200
-CYAN_DARK = ft.Colors.CYAN_900
-CYAN_BORDER = ft.Colors.CYAN_700
-WHITE = ft.Colors.WHITE
-WHITE_70 = ft.Colors.WHITE_70
-BLACK = ft.Colors.BLACK
-CINZA = ft.Colors.GREY_600
-CINZA_ESCURO = ft.Colors.GREY_800
+# Paleta Stark Tech - Azul / Ciano Holográfico
+CYAN = "#00F0FF"
+CYAN_BRIGHT = "#64FFFF"
+CYAN_DARK = "#003246"
+CYAN_GLOW = "#0078A0"
+CYAN_BORDER = "#00A0C8"
+BG_DARK = "#02070D"
+BG_PANEL = "#051321"
+TEXT_WHITE = "#E0F8FF"
+TEXT_MUTED = "#5096B4"
+RED_ALERT = "#FF2A50"
 
 
 def interface_mobile(page: ft.Page):
-    page.title = "J.A.R.V.I.S. HUD"
+    page.title = "J.A.R.V.I.S. HUD - STARK INTERFACE"
     page.theme_mode = ft.ThemeMode.DARK
-    page.bgcolor = BLACK
+    page.bgcolor = BG_DARK
     page.padding = 0
     page.spacing = 0
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -35,469 +36,344 @@ def interface_mobile(page: ft.Page):
         "online": True,
     }
 
-    texto_status = ft.Text(
-        "ESTABELECENDO CONEXÃO...",
-        size=13,
-        color=ft.Colors.YELLOW_ACCENT_400,
-        weight=ft.FontWeight.BOLD,
-        text_align=ft.TextAlign.CENTER,
+    # --- NÚCLEO CENTRAL (REATOR STARK TRIANGULAR) ---
+    icone_triangulo = ft.Icon(ft.Icons.CHANGE_HISTORY, size=40, color=CYAN_BRIGHT)
+
+    triangulo_nucleo = ft.Container(
+        width=45,
+        height=45,
+        alignment=ft.Alignment.CENTER,
+        content=icone_triangulo,
     )
 
-    texto_aviso = ft.Text(
-        "",
-        size=11,
-        color=ft.Colors.RED_ACCENT_400,
-        text_align=ft.TextAlign.CENTER,
-        visible=False,
-    )
-
-    texto_jarvis = ft.Text(
-        "J.A.R.V.I.S.",
-        size=12,
-        weight=ft.FontWeight.BOLD,
-        color=CYAN,
-        text_align=ft.TextAlign.CENTER,
-    )
-
-    reator = ft.Container(
-        width=130,
-        height=130,
+    reator_circulo = ft.Container(
+        width=140,
+        height=140,
         shape=ft.BoxShape.CIRCLE,
-        bgcolor=CYAN_DARK,
-        border=ft.Border.all(3, CYAN),
-        shadow=ft.BoxShadow(
-            spread_radius=4,
-            blur_radius=25,
-            color=CYAN,
-            offset=ft.Offset(0, 0),
-        ),
+        bgcolor=ft.Colors.with_opacity(0.25, CYAN_DARK),
+        border=ft.Border.all(2, CYAN),
+        shadow=ft.BoxShadow(spread_radius=6, blur_radius=30, color=CYAN_GLOW),
         alignment=ft.Alignment.CENTER,
-        ink=True,
-        content=ft.Column(
-            alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=5,
-            controls=[
-                ft.Icon(ft.Icons.MIC, size=42, color=WHITE),
-                texto_jarvis,
-            ],
-        ),
+        content=triangulo_nucleo,
     )
 
-    anel_externo = ft.ProgressRing(
-        width=205, height=205, stroke_width=2,
-        color=CYAN_LIGHT, value=0.55, rotate=ft.Rotate(angle=0),
-    )
+    anel_1 = ft.ProgressRing(width=220, height=220, stroke_width=2, color=CYAN_BORDER, value=0.6, rotate=ft.Rotate(0))
+    anel_2 = ft.ProgressRing(width=185, height=185, stroke_width=3, color=CYAN, value=0.75, rotate=ft.Rotate(0))
+    anel_3 = ft.ProgressRing(width=160, height=160, stroke_width=1.5, color=CYAN_BRIGHT, value=0.4, rotate=ft.Rotate(0))
 
-    anel_interno = ft.ProgressRing(
-        width=170, height=170, stroke_width=4,
-        color=CYAN, value=0.70, rotate=ft.Rotate(angle=0),
-    )
-
-    esfera = ft.Stack(
-        width=205, height=205,
+    esfera_stark = ft.Stack(
+        width=220,
+        height=220,
         alignment=ft.Alignment.CENTER,
-        controls=[anel_externo, anel_interno, reator],
+        controls=[anel_1, anel_2, anel_3, reator_circulo],
     )
 
-    def girar(anel, velocidade):
-        angulo = 0.0
+    def animar_aneis():
+        ang1, ang2, ang3 = 0.0, 0.0, 0.0
         while True:
-            angulo += velocidade
-            anel.rotate = ft.Rotate(angle=angulo)
+            ang1 += 0.02
+            ang2 -= 0.035
+            ang3 += 0.05
+            anel_1.rotate = ft.Rotate(angle=ang1)
+            anel_2.rotate = ft.Rotate(angle=ang2)
+            anel_3.rotate = ft.Rotate(angle=ang3)
             try:
                 page.update()
             except Exception:
                 break
-            time.sleep(0.05)
+            time.sleep(0.04)
 
-    threading.Thread(target=girar, args=(anel_externo, 0.025), daemon=True).start()
-    threading.Thread(target=girar, args=(anel_interno, -0.045), daemon=True).start()
+    threading.Thread(target=animar_aneis, daemon=True).start()
 
-    # --- Toast de aviso (usado quando offline) ---
-    def mostrar_aviso(mensagem):
-        texto_aviso.value = mensagem
-        texto_aviso.visible = True
-        page.update()
-
-        def esconder():
-            time.sleep(2.5)
-            texto_aviso.visible = False
-            try:
-                page.update()
-            except Exception:
-                pass
-
-        threading.Thread(target=esconder, daemon=True).start()
-
-    # --- Popups com visual de vidro (glassmorphism) ---
-    popup_refs = {}
-
-    def criar_popup(icone, titulo, resumo, detalhes_iniciais, identificador, permite_offline=False):
-        titulo_texto = ft.Text(titulo, size=11, weight=ft.FontWeight.BOLD, color=CYAN)
-        resumo_texto = ft.Text(resumo, size=10, color=WHITE_70)
-        icone_control = ft.Icon(icone, size=15, color=CYAN)
-
-        detalhes_coluna = ft.Column(spacing=5, controls=[])
-
-        painel_vidro = ft.Container(
-            visible=False,
-            padding=8,
-            border_radius=8,
-            bgcolor=ft.Colors.with_opacity(0.10, WHITE),
-            border=ft.Border.all(1, ft.Colors.with_opacity(0.35, CYAN)),
-            blur=ft.Blur(8, 8),
-            content=ft.Column(
-                spacing=5,
-                controls=[
-                    ft.Divider(height=1, color=CYAN_BORDER),
-                    detalhes_coluna,
-                ],
-            ),
-        )
-
-        def montar_detalhes(linhas):
-            detalhes_coluna.controls = [
-                ft.Text(linha, size=10, color=WHITE_70) for linha in linhas
-            ]
-
-        montar_detalhes(detalhes_iniciais)
-
-        def clicar(e):
-            if not estado["online"] and not permite_offline:
-                mostrar_aviso("Serviço indisponível. Ligue o servidor para prosseguir.")
-                return
-
-            if estado["popup_aberto"] == identificador:
-                estado["popup_aberto"] = None
-                painel_vidro.visible = False
-            else:
-                estado["popup_aberto"] = identificador
-                for popup_id, ref in popup_refs.items():
-                    if popup_id != identificador:
-                        ref["painel"].visible = False
-                painel_vidro.visible = True
-
-            page.update()
-
-        container = ft.Container(
-            width=135,
-            padding=8,
-            border_radius=6,
-            bgcolor="#080E1113",
-            border=ft.Border.all(1, CYAN_BORDER),
-            ink=True,
-            on_click=clicar,
-            content=ft.Column(
-                spacing=5,
-                controls=[
-                    ft.Row(spacing=6, controls=[icone_control, titulo_texto]),
-                    resumo_texto,
-                    painel_vidro,
-                ],
-            ),
-        )
-
-        popup_refs[identificador] = {
-            "container": container,
-            "icone": icone_control,
-            "titulo": titulo_texto,
-            "resumo": resumo_texto,
-            "painel": painel_vidro,
-            "montar_detalhes": montar_detalhes,
-        }
-
-        return container
-
-    popup_bateria = criar_popup(
-        ft.Icons.BATTERY_CHARGING_FULL, "BATERIA", "92% • Carregando",
-        ["Carga atual: 92%", "Estado: Carregando", "Última carga: 100%", "Temperatura: --°C"],
-        "bateria",
-    )
-
-    popup_servidor = criar_popup(
-        ft.Icons.CLOUD, "SERVIDOR", "● ONLINE",
-        ["Backend: Render Cloud", "Ping: 45 ms", "Status: Operacional"],
-        "servidor", permite_offline=True,
-    )
-
-    popup_email = criar_popup(
-        ft.Icons.EMAIL, "E-MAIL", "3 não lidos",
-        ["3 mensagens não lidas", "Último: --", "Remetente: --"],
-        "email",
-    )
-
-    popup_noticias = criar_popup(
-        ft.Icons.NEWSPAPER, "NOTÍCIAS", "5 importantes",
-        ["1 notícia importante", "5 notícias recentes", "Tecnologia: --"],
-        "noticias",
-    )
-
-    linha_popups_superior = ft.Row(
-        alignment=ft.MainAxisAlignment.CENTER, spacing=8,
-        controls=[popup_bateria, popup_servidor],
-    )
-
-    linha_popups_inferior = ft.Row(
-        alignment=ft.MainAxisAlignment.CENTER, spacing=8,
-        controls=[popup_email, popup_noticias],
-    )
-
-    # --- Campo de comando ---
-    campo_comando = ft.TextField(
-        hint_text="Diga ou digite um comando para o JARVIS",
-        width=340, height=55, color=WHITE,
-        hint_style=ft.TextStyle(color=WHITE_70),
-        border_color=CYAN, focused_border_color=CYAN, cursor_color=CYAN,
-        text_size=14,
-    )
-
-    texto_chat = ft.Text("Aguardando ordem...", size=14, color=WHITE_70, text_align=ft.TextAlign.CENTER)
-
-    def enviar_comando(e):
-        texto = campo_comando.value.strip()
-        if not texto:
-            return
-
-        texto_chat.value = "PROCESSANDO..."
-        texto_chat.color = CYAN
-        page.update()
-
-        try:
-            resultado = enviar_mensagem(texto)
-            if resultado.get("tipo") == "function_call":
-                texto_chat.value = f"Ação solicitada: {resultado.get('nome', 'desconhecida')}"
-            else:
-                texto_chat.value = resultado.get("resposta", "Sem resposta do servidor.")
-            texto_chat.color = WHITE_70
-        except Exception as erro:
-            texto_chat.value = "Falha na comunicação com o JARVIS."
-            texto_chat.color = ft.Colors.RED_ACCENT_400
-            print(f"Erro JARVIS: {erro}")
-
-        campo_comando.value = ""
-        page.update()
-
-    botao_enviar = ft.Button(content="ENVIAR", on_click=enviar_comando)
-
-    def fechar_comandos():
-        estado["painel_comando"] = False
-        painel_comando.visible = False
-        seta_comando.visible = True
-        page.update()
-
-    seta_comando = ft.IconButton(
-        icon=ft.Icons.KEYBOARD_ARROW_DOWN,
-        icon_color=CYAN, icon_size=38,
-        tooltip="Deslize para cima ou toque",
-    )
-
-    painel_comando = ft.Column(
-        visible=False,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=14,
-        controls=[
-            ft.IconButton(
-                icon=ft.Icons.KEYBOARD_ARROW_UP, icon_color=CYAN, icon_size=34,
-                on_click=lambda e: fechar_comandos(),
-            ),
-            campo_comando,
-            botao_enviar,
-            texto_chat,
-        ],
-    )
-
-    def abrir_comandos(e=None):
-        if estado["painel_comando"]:
-            return
-        estado["painel_comando"] = True
-        painel_comando.visible = True
-        seta_comando.visible = False
-        page.update()
-
-    seta_comando.on_click = abrir_comandos
-
-    # Swipe up pra abrir o painel (além do clique na seta)
-    area_gesto = ft.GestureDetector(
-        content=ft.Container(height=40, width=200),
-        on_vertical_drag_end=lambda e: abrir_comandos() if e.velocity_y < -200 else None,
-    )
-
-    # --- Painéis laterais (modo paisagem) ---
-    def criar_painel(titulo, icone, controles):
+    # --- COMPONENTES DE DESIGN CIBERNÉTICO ---
+    def criar_painel_stark(titulo, conteudo, width=175):
         return ft.Container(
-            width=175, padding=10, border_radius=5,
-            bgcolor="#080E1113", border=ft.Border.all(1, CYAN_BORDER),
+            width=width,
+            padding=8,
+            border_radius=4,
+            bgcolor=ft.Colors.with_opacity(0.4, BG_PANEL),
+            border=ft.Border.all(1, ft.Colors.with_opacity(0.6, CYAN_BORDER)),
             content=ft.Column(
-                spacing=5,
+                spacing=4,
                 controls=[
-                    ft.Row(spacing=6, controls=[
-                        ft.Icon(icone, size=15, color=CYAN),
-                        ft.Text(titulo, color=CYAN, size=11, weight=ft.FontWeight.BOLD),
-                    ]),
-                    ft.Divider(height=1, color=CYAN_BORDER),
-                    *controles,
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[
+                            ft.Text(titulo.upper(), size=9, weight=ft.FontWeight.BOLD, color=CYAN),
+                            ft.Container(width=6, height=6, bgcolor=CYAN, shape=ft.BoxShape.CIRCLE),
+                        ],
+                    ),
+                    ft.Divider(height=1, color=ft.Colors.with_opacity(0.3, CYAN_BORDER)),
+                    *conteudo,
                 ],
             ),
         )
 
-    painel_esquerdo = ft.Column(
-        alignment=ft.MainAxisAlignment.CENTER, spacing=8,
-        controls=[
-            criar_painel("DEVICE", ft.Icons.SMARTPHONE, [
-                ft.Text("Bateria: 92%", color=WHITE_70, size=10),
-                ft.Text("Memória: Estável", color=WHITE_70, size=10),
-                ft.Text("Sistema: Android", color=WHITE_70, size=10),
-            ]),
-            criar_painel("NOTIFICAÇÕES", ft.Icons.NOTIFICATIONS, [
-                ft.Text("E-mails: 3 novos", color=WHITE_70, size=10),
-                ft.Text("Notícias: 5 novas", color=WHITE_70, size=10),
-            ]),
-        ],
-    )
+    # --- MODAL OVERLAY HOLOGRÁFICO ---
+    modal_titulo = ft.Text("", size=12, weight=ft.FontWeight.BOLD, color=CYAN_BRIGHT)
+    modal_conteudo = ft.Column(spacing=6)
 
-    painel_direito = ft.Column(
-        alignment=ft.MainAxisAlignment.CENTER, spacing=8,
-        controls=[
-            criar_painel("NETWORK", ft.Icons.WIFI, [
-                ft.Text("Rede: 5G", color=WHITE_70, size=10),
-                ft.Text("Ping: 45 ms", color=WHITE_70, size=10),
-                ft.Text("Backend: ONLINE", color=WHITE_70, size=10),
-            ]),
-            criar_painel("SYSTEM", ft.Icons.MIC, [
-                ft.Text("Escuta: Ativa", color=WHITE_70, size=10),
-                ft.Text("Mídia: Desconectada", color=WHITE_70, size=10),
-            ]),
-        ],
-    )
+    def fechar_modal(_=None):
+        overlay_modal.visible = False
+        page.update()
 
-    layout_paisagem = ft.Row(
-        alignment=ft.MainAxisAlignment.CENTER,
-        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-        spacing=15,
-        controls=[painel_esquerdo, esfera, painel_direito],
-    )
-
-    layout_retrato = ft.Column(
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=10,
-        controls=[
-            texto_status,
-            texto_aviso,
-            linha_popups_superior,
-            esfera,
-            linha_popups_inferior,
-            area_gesto,
-            seta_comando,
-            painel_comando,
-        ],
-    )
-
-    layout_paisagem_completo = ft.Column(
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=8,
-        controls=[
-            layout_paisagem,
-            ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[
-                ft.Container(content=campo_comando, width=300),
-                botao_enviar,
-            ]),
-            texto_chat,
-        ],
-    )
-
-    layout_paisagem_completo.visible = False
-
-    container_principal = ft.Container(
-        expand=True,
+    overlay_modal = ft.Container(
+        visible=False,
         alignment=ft.Alignment.CENTER,
-        content=ft.Stack(
-            expand=True,
-            alignment=ft.Alignment.CENTER,
-            controls=[layout_retrato, layout_paisagem_completo],
+        bgcolor=ft.Colors.with_opacity(0.75, BG_DARK),
+        expand=True,
+        content=ft.Container(
+            width=310,
+            padding=14,
+            border_radius=6,
+            bgcolor=BG_PANEL,
+            border=ft.Border.all(1.5, CYAN),
+            shadow=ft.BoxShadow(spread_radius=2, blur_radius=20, color=CYAN_GLOW),
+            content=ft.Column(
+                spacing=10,
+                controls=[
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[modal_titulo, ft.IconButton(ft.Icons.CLOSE, icon_color=CYAN, icon_size=18, on_click=fechar_modal)],
+                    ),
+                    ft.Divider(height=1, color=CYAN_BORDER),
+                    modal_conteudo,
+                ],
+            ),
         ),
     )
 
-    page.add(container_principal)
+    # --- NÓS DO TOPO (BATERIA, SERVIDORES, ETC.) ---
+    def criar_no_status(icone, titulo, valor, identificador, detalhes):
+        def abrir(_=None):
+            if not estado["online"] and identificador != "servidor":
+                return
+            modal_titulo.value = f"// {titulo.upper()}"
+            modal_conteudo.controls = [
+                ft.Row([ft.Icon(ft.Icons.CHEVRON_RIGHT, size=12, color=CYAN), ft.Text(d, size=11, color=TEXT_WHITE)])
+                for d in detalhes
+            ]
+            overlay_modal.visible = True
+            page.update()
 
-    def atualizar_orientacao(e=None):
-        largura = page.width
-        altura = page.height
-        if largura is None or altura is None:
+        return ft.Container(
+            width=140,
+            padding=8,
+            border_radius=4,
+            bgcolor=ft.Colors.with_opacity(0.2, BG_PANEL),
+            border=ft.Border.all(1, CYAN_BORDER),
+            ink=True,
+            on_click=abrir,
+            content=ft.Row(
+                spacing=8,
+                controls=[
+                    ft.Icon(icone, size=16, color=CYAN),
+                    ft.Column(
+                        spacing=0,
+                        controls=[
+                            ft.Text(titulo, size=9, weight=ft.FontWeight.BOLD, color=CYAN),
+                            ft.Text(valor, size=9, color=TEXT_MUTED),
+                        ],
+                    ),
+                ],
+            ),
+        )
+
+    btn_bateria = criar_no_status(ft.Icons.BATTERY_CHARGING_FULL, "BATERIA", "92% • STABLE", "bateria", ["Tensão: 4.2V", "Carga: 92%", "Status: Estável"])
+    btn_servidor = criar_no_status(ft.Icons.CLOUD_DONE, "SERVIDOR", "● ONLINE", "servidor", ["Host: Render Cloud", "Latência: 42ms", "Status: Operacional"])
+    btn_email = criar_no_status(ft.Icons.EMAIL, "MENSAGENS", "3 NOVAS", "email", ["3 mensagens não lidas", "Prioridade: Alta"])
+    btn_noticias = criar_no_status(ft.Icons.NEWSPAPER, "NOTÍCIAS", "FEED ATIVO", "noticias", ["Destaques Starknet", "Alertas globais: 0"])
+
+    linha_top = ft.Row(alignment=ft.MainAxisAlignment.CENTER, spacing=10, controls=[btn_bateria, btn_servidor])
+    linha_bottom = ft.Row(alignment=ft.MainAxisAlignment.CENTER, spacing=10, controls=[btn_email, btn_noticias])
+
+    # --- CAMPO DE COMANDO & CHAT ---
+    campo_comando = ft.TextField(
+        hint_text="DIGITE UM COMANDO PARA O JARVIS...",
+        width=280, height=42, color=TEXT_WHITE,
+        hint_style=ft.TextStyle(color=TEXT_MUTED, size=11),
+        border_color=CYAN_BORDER, focused_border_color=CYAN, cursor_color=CYAN,
+        text_size=11, content_padding=8,
+    )
+
+    texto_chat = ft.Text("SYSTEM READY. LISTENING...", size=11, color=TEXT_MUTED, text_align=ft.TextAlign.CENTER)
+
+    def enviar_cmd(_=None):
+        txt = campo_comando.value.strip()
+        if not txt:
             return
-        if largura > altura:
-            estado["orientacao"] = "landscape"
-            layout_retrato.visible = False
-            layout_paisagem_completo.visible = True
-        else:
-            estado["orientacao"] = "portrait"
-            layout_retrato.visible = True
-            layout_paisagem_completo.visible = False
+        texto_chat.value = "PROCESSING QUERY..."
+        texto_chat.color = CYAN
+        page.update()
+        try:
+            res = enviar_mensagem(txt)
+            texto_chat.value = res.get("resposta", "Comando executado.")
+            texto_chat.color = TEXT_WHITE
+        except Exception:
+            texto_chat.value = "ERRO DE CONEXÃO COM O NÚCLEO."
+            texto_chat.color = RED_ALERT
+        campo_comando.value = ""
         page.update()
 
-    page.on_resized = atualizar_orientacao
+    btn_enviar = ft.IconButton(icon=ft.Icons.SEND, icon_color=CYAN, icon_size=18, on_click=enviar_cmd)
 
-    # --- Modo offline propagando pela interface ---
-    def definir_estado_online(online: bool):
+    def alternar_painel_comando(_=None):
+        estado["painel_comando"] = not estado["painel_comando"]
+        painel_bottom.visible = estado["painel_comando"]
+        seta_comando.icon = ft.Icons.KEYBOARD_ARROW_DOWN if estado["painel_comando"] else ft.Icons.KEYBOARD_ARROW_UP
+        page.update()
+
+    seta_comando = ft.IconButton(icon=ft.Icons.KEYBOARD_ARROW_UP, icon_color=CYAN, icon_size=30, on_click=alternar_painel_comando)
+
+    painel_bottom = ft.Container(
+        visible=False,
+        padding=10,
+        bgcolor=ft.Colors.with_opacity(0.85, BG_PANEL),
+        border=ft.Border.all(1, CYAN_BORDER),
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=8,
+            controls=[
+                ft.Row([campo_comando, btn_enviar], alignment=ft.MainAxisAlignment.CENTER),
+                texto_chat,
+            ],
+        ),
+    )
+
+    # --- LAYOUT EM PÉ (PORTRAIT) ---
+    texto_status = ft.Text("J A R V I S   S Y S T E M S", size=12, color=CYAN, weight=ft.FontWeight.BOLD)
+
+    layout_portrait = ft.Column(
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        controls=[
+            ft.Container(height=5),
+            texto_status,
+            linha_top,
+            esfera_stark,
+            linha_bottom,
+            seta_comando,
+            painel_bottom,
+            ft.Container(height=5),
+        ],
+    )
+
+    # --- LAYOUT DEITADO (LANDSCAPE - PAINEL COMPLETO STARK) ---
+    col_esquerda_1 = ft.Column([
+        criar_painel_stark("DEVICE", [
+            ft.Text("MARK VII • OS v7.2", size=8, color=TEXT_MUTED),
+            ft.Text("CPU: 2.7 GHz • 8 CORES", size=8, color=TEXT_MUTED),
+            ft.Text("RAM: 16 GB STABLE", size=8, color=TEXT_MUTED),
+        ]),
+        criar_painel_stark("SYSTEM MONITOR", [
+            ft.Text("CPU USAGE: 55%", size=8, color=CYAN),
+            ft.ProgressBar(value=0.55, color=CYAN, height=4),
+            ft.Text("RAM USAGE: 68%", size=8, color=CYAN),
+            ft.ProgressBar(value=0.68, color=CYAN, height=4),
+        ]),
+    ], spacing=6)
+
+    col_esquerda_2 = ft.Column([
+        criar_painel_stark("DIAGNOSTICS", [
+            ft.Text("SYSTEM STATUS: 100%", size=8, color=CYAN_BRIGHT),
+            ft.Text("PERFORMANCE: SECURE", size=8, color=TEXT_MUTED),
+        ]),
+        criar_painel_stark("CONNECTIONS", [
+            ft.Text("SATELLITE 01: CONNECTED", size=8, color=TEXT_MUTED),
+            ft.Text("SATELLITE 02: CONNECTED", size=8, color=TEXT_MUTED),
+        ]),
+    ], spacing=6)
+
+    col_direita_1 = ft.Column([
+        criar_painel_stark("WEATHER", [
+            ft.Text("28°C FORTALEZA", size=8, color=CYAN),
+            ft.Text("HUMIDITY: 65% • WIND 12 KM/H", size=8, color=TEXT_MUTED),
+        ]),
+        criar_painel_stark("CALENDAR", [
+            ft.Text("OCT 2026 • UPCOMING EVENTS", size=8, color=CYAN),
+            ft.Text("10:00 AM - SYSTEM CHECK", size=8, color=TEXT_MUTED),
+        ]),
+    ], spacing=6)
+
+    col_direita_2 = ft.Column([
+        criar_painel_stark("DATA STREAM", [
+            ft.Text("VOICE MATCH: 100%", size=8, color=CYAN_BRIGHT),
+            ft.Text("LATITUDE: 3.7319° S", size=8, color=TEXT_MUTED),
+        ]),
+        criar_painel_stark("FILES & DOCS", [
+            ft.Text("PROJECT_REPORT.PDF", size=8, color=TEXT_MUTED),
+            ft.Text("SECURITY_PROTOCOL.PDF", size=8, color=TEXT_MUTED),
+        ]),
+    ], spacing=6)
+
+    col_centro = ft.Column(
+        alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=8,
+        controls=[
+            esfera_stark,
+            ft.Row([campo_comando, btn_enviar], alignment=ft.MainAxisAlignment.CENTER),
+            texto_chat,
+        ],
+    )
+
+    layout_landscape = ft.Row(
+        alignment=ft.MainAxisAlignment.CENTER,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=10,
+        controls=[col_esquerda_1, col_esquerda_2, col_centro, col_direita_1, col_direita_2],
+    )
+
+    layout_landscape.visible = False
+
+    stack_main = ft.Stack(
+        expand=True,
+        alignment=ft.Alignment.CENTER,
+        controls=[layout_portrait, layout_landscape, overlay_modal],
+    )
+
+    page.add(stack_main)
+
+    # --- RESPONSIVIDADE LANDSCAPE / PORTRAIT ---
+    def redimensionar(_=None):
+        if page.width and page.height:
+            if page.width > page.height:
+                layout_portrait.visible = False
+                layout_landscape.visible = True
+            else:
+                layout_portrait.visible = True
+                layout_landscape.visible = False
+            page.update()
+
+    page.on_resize = redimensionar
+
+    # --- MONITORAMENTO DO SERVIDORES ---
+    def atualizar_online(online):
         estado["online"] = online
-
         if online:
-            texto_status.value = "S I S T E M A   O N L I N E"
+            texto_status.value = "J A R V I S   S Y S T E M S"
             texto_status.color = CYAN
-            reator.bgcolor = CYAN_DARK
-            reator.border = ft.Border.all(3, CYAN)
-            reator.shadow = ft.BoxShadow(spread_radius=4, blur_radius=25, color=CYAN, offset=ft.Offset(0, 0))
-            anel_externo.color = CYAN_LIGHT
-            anel_interno.color = CYAN
-            popup_refs["servidor"]["resumo"].value = "● ONLINE"
-            popup_refs["servidor"]["montar_detalhes"](
-                ["Backend: Render Cloud", "Ping: 45 ms", "Status: Operacional"]
-            )
+            icone_triangulo.color = CYAN_BRIGHT
+            reator_circulo.shadow = ft.BoxShadow(spread_radius=6, blur_radius=30, color=CYAN_GLOW)
         else:
-            texto_status.value = "S I S T E M A   O F F L I N E"
-            texto_status.color = ft.Colors.RED_ACCENT_400
-            reator.bgcolor = CINZA_ESCURO
-            reator.border = ft.Border.all(3, CINZA)
-            reator.shadow = ft.BoxShadow(spread_radius=2, blur_radius=10, color=CINZA, offset=ft.Offset(0, 0))
-            anel_externo.color = CINZA
-            anel_interno.color = CINZA
-            popup_refs["servidor"]["resumo"].value = "● DESCONECTADO"
-
-            def tentar_reconectar(e):
-                mostrar_aviso("Tentando reconectar...")
-                verificar_uma_vez()
-
-            popup_refs["servidor"]["montar_detalhes"]([])
-            popup_refs["servidor"]["painel"].content.controls[-1].controls = [
-                ft.Text("Servidor Desconectado.", size=10, color=ft.Colors.RED_ACCENT_400),
-                ft.Text("Necessário reconectar.", size=10, color=WHITE_70),
-                ft.Button(content="RECONECTAR", on_click=tentar_reconectar),
-            ]
-
-        for popup_id, ref in popup_refs.items():
-            if popup_id != "servidor":
-                ref["container"].opacity = 1.0 if online else 0.35
+            texto_status.value = "S Y S T E M S   O F F L I N E"
+            texto_status.color = RED_ALERT
+            icone_triangulo.color = RED_ALERT
+            reator_circulo.shadow = ft.BoxShadow(spread_radius=2, blur_radius=10, color=RED_ALERT)
 
         try:
             page.update()
         except Exception:
             pass
 
-    def verificar_uma_vez():
-        try:
-            online = verificar_status_servidor()
-        except Exception:
-            online = False
-        definir_estado_online(online)
-
-    def loop_verificacao():
+    def loop_servidor():
         while True:
-            verificar_uma_vez()
-            time.sleep(15)
+            try:
+                st = verificar_status_servidor()
+            except Exception:
+                st = False
+            atualizar_online(st)
+            time.sleep(12)
 
-    threading.Thread(target=loop_verificacao, daemon=True).start()
-
+    threading.Thread(target=loop_servidor, daemon=True).start()
     page.update()
