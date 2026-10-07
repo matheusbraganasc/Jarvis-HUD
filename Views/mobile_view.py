@@ -4,6 +4,45 @@ import flet as ft
 import flet.canvas as cv
 from Core.api_client import verificar_status_servidor, enviar_mensagem
 
+CYAN = ft.Colors.CYAN_ACCENT_400
+CYAN_CLARO = ft.Colors.CYAN_200
+CYAN_ESCURO = ft.Colors.CYAN_900
+CYAN_BORDA = ft.Colors.CYAN_700
+BRANCO_70 = ft.Colors.WHITE_70
+
+FONTE_TITULO = "Orbitron"
+FONTE_DADOS = "ShareTechMono"
+
+
+def _canto(x, y, sx, sy, tam, paint):
+    return cv.Path(
+        elements=[
+            cv.Path.MoveTo(x=x, y=y + sy * tam),
+            cv.Path.LineTo(x=x, y=y),
+            cv.Path.LineTo(x=x + sx * tam, y=y),
+        ],
+        paint=paint,
+    )
+
+
+def _cantos_angulares(largura, altura, tam=12, espessura=2):
+    paint = ft.Paint(
+        color=CYAN, stroke_width=espessura, style=ft.PaintingStyle.STROKE
+    )
+    m = espessura / 2
+    x0, y0, x1, y1 = m, m, largura - m, altura - m
+    return cv.Canvas(
+        width=largura,
+        height=altura,
+        shapes=[
+            _canto(x0, y0, 1, 1, tam, paint),
+            _canto(x1, y0, -1, 1, tam, paint),
+            _canto(x0, y1, 1, -1, tam, paint),
+            _canto(x1, y1, -1, -1, tam, paint),
+        ],
+    )
+
+
 def interface_mobile(page: ft.Page):
     page.title = "J.A.R.V.I.S. HUD"
     page.theme_mode = ft.ThemeMode.DARK
@@ -14,23 +53,25 @@ def interface_mobile(page: ft.Page):
     page.scroll = ft.ScrollMode.AUTO
 
     page.fonts = {
-        "Orbitron": "https://github.com/google/fonts/raw/main/ofl/orbitron/Orbitron%5Bwght%5D.ttf"
+        "Orbitron": "https://github.com/google/fonts/raw/main/ofl/orbitron/Orbitron%5Bwght%5D.ttf",
+        "ShareTechMono": "https://github.com/google/fonts/raw/main/ofl/sharetechmono/ShareTechMono-Regular.ttf",
     }
-    page.theme = ft.Theme(font_family="Orbitron")
+    page.theme = ft.Theme(font_family=FONTE_TITULO)
 
     texto_status = ft.Text(
         "ESTABELECENDO CONEXÃO...",
         size=11,
         color=ft.Colors.YELLOW_ACCENT_400,
         weight=ft.FontWeight.BOLD,
-        text_align=ft.TextAlign.CENTER
+        text_align=ft.TextAlign.CENTER,
     )
 
     texto_chat = ft.Text(
         "Aguardando ordem...",
         size=13,
-        color=ft.Colors.WHITE_70,
-        text_align=ft.TextAlign.CENTER
+        color=BRANCO_70,
+        text_align=ft.TextAlign.CENTER,
+        font_family=FONTE_DADOS,
     )
 
     campo_comando = ft.TextField(
@@ -38,9 +79,9 @@ def interface_mobile(page: ft.Page):
         width=290,
         height=45,
         color=ft.Colors.WHITE,
-        border_color=ft.Colors.CYAN_ACCENT_400,
-        cursor_color=ft.Colors.CYAN_ACCENT_400,
-        text_size=12
+        border_color=CYAN,
+        cursor_color=CYAN,
+        text_size=12,
     )
 
     def enviar_comando(_=None):
@@ -49,7 +90,7 @@ def interface_mobile(page: ft.Page):
             return
 
         texto_chat.value = "Processando..."
-        texto_chat.color = ft.Colors.CYAN_ACCENT_400
+        texto_chat.color = CYAN
         page.update()
 
         resultado = enviar_mensagem(texto)
@@ -59,27 +100,29 @@ def interface_mobile(page: ft.Page):
         else:
             texto_chat.value = resultado.get("resposta", "Sem resposta do servidor.")
 
-        texto_chat.color = ft.Colors.WHITE_70
+        texto_chat.color = BRANCO_70
         campo_comando.value = ""
         page.update()
+
+    botao_enviar = ft.Button(content="Enviar", on_click=enviar_comando)
 
     texto_jarvis = ft.Text(
         "J.A.R.V.I.S.",
         size=11,
         weight=ft.FontWeight.BOLD,
-        color=ft.Colors.CYAN_ACCENT_400,
+        color=CYAN,
     )
 
     reator = ft.Container(
         width=120,
         height=120,
         shape=ft.BoxShape.CIRCLE,
-        bgcolor=ft.Colors.CYAN_900,
-        border=ft.Border.all(2, ft.Colors.CYAN_ACCENT_400),
+        bgcolor=CYAN_ESCURO,
+        border=ft.Border.all(2, CYAN),
         shadow=ft.BoxShadow(
             spread_radius=3,
             blur_radius=18,
-            color=ft.Colors.CYAN_ACCENT_400,
+            color=CYAN,
             offset=ft.Offset(0, 0),
         ),
         content=ft.Column(
@@ -99,7 +142,7 @@ def interface_mobile(page: ft.Page):
         width=180,
         height=180,
         stroke_width=2,
-        color=ft.Colors.CYAN_200,
+        color=CYAN_CLARO,
         value=0.4,
         rotate=ft.Rotate(angle=0),
     )
@@ -108,7 +151,7 @@ def interface_mobile(page: ft.Page):
         width=150,
         height=150,
         stroke_width=3,
-        color=ft.Colors.CYAN_ACCENT_400,
+        color=CYAN,
         value=0.65,
         rotate=ft.Rotate(angle=0),
     )
@@ -120,60 +163,26 @@ def interface_mobile(page: ft.Page):
         controls=[anel_externo, anel_interno, reator],
     )
 
-    def girar(anel, velocidade):
-        angulo = 0.0
+    def animar_aneis():
+        ang_externo = 0.0
+        ang_interno = 0.0
         while True:
-            angulo += velocidade
-            anel.rotate = ft.Rotate(angle=angulo)
+            ang_externo += 0.025
+            ang_interno -= 0.045
+            anel_externo.rotate = ft.Rotate(angle=ang_externo)
+            anel_interno.rotate = ft.Rotate(angle=ang_interno)
             try:
                 page.update()
             except Exception:
                 break
             time.sleep(0.05)
 
-    threading.Thread(target=girar, args=(anel_externo, 0.025), daemon=True).start()
-    threading.Thread(target=girar, args=(anel_interno, -0.045), daemon=True).start()
+    threading.Thread(target=animar_aneis, daemon=True).start()
 
-    def criar_painel_tatico(titulo, controles, largura=155, altura=105):
-        desenho_bordas = cv.Canvas(
-            width=largura,
-            height=altura,
-            shapes=[
-                cv.Path(
-                    elements=[
-                        cv.Path.MoveTo(0, 12),
-                        cv.Path.LineTo(0, 0),
-                        cv.Path.LineTo(12, 0),
-                    ],
-                    paint=ft.Paint(color=ft.Colors.CYAN_ACCENT_400, stroke_width=2, style=ft.PaintingStyle.STROKE)
-                ),
-                cv.Path(
-                    elements=[
-                        cv.Path.MoveTo(largura - 12, 0),
-                        cv.Path.LineTo(largura, 0),
-                        cv.Path.LineTo(largura, 12),
-                    ],
-                    paint=ft.Paint(color=ft.Colors.CYAN_ACCENT_400, stroke_width=2, style=ft.PaintingStyle.STROKE)
-                ),
-                cv.Path(
-                    elements=[
-                        cv.Path.MoveTo(0, altura - 12),
-                        cv.Path.LineTo(0, altura),
-                        cv.Path.LineTo(12, altura),
-                    ],
-                    paint=ft.Paint(color=ft.Colors.CYAN_ACCENT_400, stroke_width=2, style=ft.PaintingStyle.STROKE)
-                ),
-                cv.Path(
-                    elements=[
-                        cv.Path.MoveTo(largura - 12, altura),
-                        cv.Path.LineTo(largura, altura),
-                        cv.Path.LineTo(largura, altura - 12),
-                    ],
-                    paint=ft.Paint(color=ft.Colors.CYAN_ACCENT_400, stroke_width=2, style=ft.PaintingStyle.STROKE)
-                ),
-            ]
-        )
+    def linha_dado(texto, tam=9):
+        return ft.Text(texto, color=BRANCO_70, size=tam, font_family=FONTE_DADOS)
 
+    def criar_painel_tatico(titulo, controles, largura=155, altura=92):
         conteudo = ft.Container(
             width=largura,
             height=altura,
@@ -182,145 +191,24 @@ def interface_mobile(page: ft.Page):
             content=ft.Column(
                 spacing=4,
                 controls=[
-                    ft.Text(titulo, color=ft.Colors.CYAN_ACCENT_400, size=10, weight=ft.FontWeight.BOLD),
-                    ft.Divider(height=1, color=ft.Colors.CYAN_700),
-                ] + controles
-            )
-        )
-
-        return ft.Stack(
-            controls=[
-                conteudo,
-                desenho_bordas
-            ]
-        )
-
-    popup_bateria = ft.Container(
-        padding=6,
-        border_radius=4,
-        bgcolor="#0A00BCD4",
-        border=ft.Border.all(1, ft.Colors.CYAN_700),
-        content=ft.Row(
-            spacing=6,
-            controls=[
-                ft.Icon(ft.Icons.BATTERY_CHARGING_FULL, size=14, color=ft.Colors.CYAN_ACCENT_400),
-                ft.Text("Bateria: 92%", size=10, color=ft.Colors.WHITE_70)
-            ]
-        )
-    )
-
-    popup_emails = ft.Container(
-        padding=6,
-        border_radius=4,
-        bgcolor="#0A00BCD4",
-        border=ft.Border.all(1, ft.Colors.CYAN_700),
-        content=ft.Row(
-            spacing=6,
-            controls=[
-                ft.Icon(ft.Icons.EMAIL, size=14, color=ft.Colors.CYAN_ACCENT_400),
-                ft.Text("E-mails: 3 novos", size=10, color=ft.Colors.WHITE_70)
-            ]
-        )
-    )
-
-    popups_topo = ft.Column(
-        alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        spacing=8,
-        controls=[
-            texto_status,
-            ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=8,
-                controls=[popup_bateria, popup_emails]
-            )
-        ]
-    )
-
-    painel_esquerdo = ft.Column(
-        alignment=ft.MainAxisAlignment.CENTER,
-        controls=[
-            criar_painel_tatico("SYSTEM STATUS", [
-                ft.Text("Bateria: 92%", color=ft.Colors.WHITE_70, size=9),
-                ft.Text("Memória: Estável", color=ft.Colors.WHITE_70, size=9),
-            ]),
-            ft.Container(height=6),
-            criar_painel_tatico("NOTIFICAÇÕES", [
-                ft.Text("Ambiente: 100%", color=ft.Colors.WHITE_70, size=9),
-                ft.Text("E-mails: 3 novos", color=ft.Colors.WHITE_70, size=9),
-            ])
-        ]
-    )
-
-    painel_direito = ft.Column(
-        alignment=ft.MainAxisAlignment.CENTER,
-        controls=[
-            criar_painel_tatico("CONECTIVIDADE", [
-                ft.Text("Rede: Render", color=ft.Colors.WHITE_70, size=9),
-                ft.Text("Ping: 45ms", color=ft.Colors.WHITE_70, size=9),
-            ]),
-            ft.Container(height=6),
-            criar_painel_tatico("SISTEMA", [
-                ft.Text("Escuta Ativa", color=ft.Colors.WHITE_70, size=9),
-                ft.Text("Status: Ótimo", color=ft.Colors.WHITE_70, size=9),
-            ])
-        ]
-    )
-
-    conteudo_dinamico = ft.Container()
-
-    def reordenar_layout(_=None):
-        largura = page.width or 0
-        altura = page.height or 0
-
-        if largura > altura:
-            conteudo_dinamico.content = ft.Column(
-                alignment=ft.MainAxisAlignment.CENTER,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=8,
-                controls=[
-                    texto_status,
-                    ft.Row(
-                        alignment=ft.MainAxisAlignment.CENTER,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                        controls=[
-                            painel_esquerdo,
-                            ft.Container(width=10),
-                            esfera,
-                            ft.Container(width=10),
-                            painel_direito
-                        ]
+                    ft.Text(
+                        titulo,
+                        color=CYAN,
+                        size=10,
+                        weight=ft.FontWeight.BOLD,
                     ),
-                    campo_comando,
-                    ft.Button(content="Enviar", on_click=enviar_comando),
-                    texto_chat
-                ]
-            )
-        else:
-            conteudo_dinamico.content = ft.Column(
-                alignment=ft.MainAxisAlignment.CENTER,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=10,
-                controls=[
-                    popups_topo,
-                    esfera,
-                    campo_comando,
-                    ft.Button(content="Enviar", on_click=enviar_comando),
-                    texto_chat
-                ]
-            )
-        page.update()
+                    ft.Divider(height=1, color=CYAN_BORDA),
+                    *controles,
+                ],
+            ),
+        )
+        return ft.Stack(
+            width=largura,
+            height=altura,
+            controls=[conteudo, _cantos_angulares(largura, altura)],
+        )
 
-    page.on_resize = reordenar_layout
-
-    page.add(conteudo_dinamico)
-    reordenar_layout()
-
-    if verificar_status_servidor():
-        texto_status.value = "S I S T E M A   O N L I N E"
-        texto_status.color = ft.Colors.CYAN_ACCENT_400
-    else:
-        texto_status.value = "S I S T E M A   O F F L I N E"
-        texto_status.color = ft.Colors.RED_ACCENT_400
-
-    page.update()
+    def chip(icone, texto):
+        return ft.Container(
+            padding=6,
+            border_radius=4,
