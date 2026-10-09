@@ -212,3 +212,4 @@ def interface_mobile(page: ft.Page):
         return ft.Container(
             padding=6,
             border_radius=4,
+        )
